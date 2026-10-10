@@ -1,0 +1,13 @@
+{
+  "expo": {
+    "name":"Local Business Locator System",
+    "slug":"local-business-locator-system",
+    "version":"1.0.0",
+    "orientation":"portrait",
+    "userInterfaceStyle":"light",
+    "newArchEnabled":true,
+    "android":{"package":"bw.localbusinesslocatorsystem","versionCode":1},
+    "web":{"bundler":"metro","name":"Local Business Locator System","shortName":"Local Business Locator","themeColor":"#147D52","backgroundColor":"#F6F8F5"},
+    "extra":{"projectDescription":"Local Business Locator System MVP for Botswana"}
+  }
+}
