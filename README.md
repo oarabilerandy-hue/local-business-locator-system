@@ -1,50 +1,52 @@
 # Local Business Locator System (LBLS)
 
-Cross-platform MVP concept for the Botho University project brief. Built with Expo and React Native for Android and web.
+LBLS is a React Native + Expo MVP for discovering local service providers in Botswana.
 
-## Features
-- Search providers by name, category, service, or area
-- Filter and sort by category, price, rating, and distance
-- Provider details with call and Google Maps search actions
-- Demo provider listing and review interactions
-- Responsive web layout and mobile navigation
+## Current working baseline
 
-## Download the app
+- The Android release APK has been built successfully with its JavaScript bundle packaged.
+- The Git commit used for that verified build is `030153c30b756898b377020a9e00f9b606c617f6`.
+- A reference branch, `known-good-android-2026-10-14`, points to that commit.
+- The Android app source (`App.js`) is intentionally not changed by the web packaging fix.
 
-This project is set up to generate a downloadable Android APK.
+## Download builds
 
-### Option 1: GitHub Actions APK artifact
-1. Push the project to the `main` branch.
-2. Open the repository's Actions tab.
-3. Run the `Build web and Android` workflow.
-4. Download the artifact named `local-business-locator-system-android-debug-apk`.
-5. Install the APK on an Android device.
+Open the [GitHub Actions runs](https://github.com/oarabilerandy-hue/local-business-locator-system/actions) and select the latest successful **Build web and Android** run. Download:
 
-### Option 2: Local Expo build
-```bash
-npm install
-npx expo prebuild --platform android --non-interactive
-cd android
-./gradlew assembleDebug
-```
+- `local-business-locator-system-android-release-apk` — Android release APK.
+- `local-business-locator-system-web-zip` — exported web app ZIP, with `index.html` at the archive root.
 
-The APK will be generated under:
-```bash
-android/app/build/outputs/apk/debug/app-debug.apk
-```
+Artifacts expire after 14 days, so download important builds promptly. For a permanent release, publish a GitHub Release with the tested APK attached.
+
+## Run the web app
+
+1. Download and extract the web ZIP.
+2. Open `index.html` in a modern browser.
+3. If your browser blocks local JavaScript, run a local static server from the extracted folder instead (for example, `python -m http.server 8000`) and open `http://localhost:8000`.
+
+The web build workflow checks that the HTML and JavaScript assets exist, rewrites root-relative asset references to relative paths, and checks the ZIP entry point. A successful build does not replace a real browser test.
+
+## Build workflow
+
+The single workflow at `.github/workflows/build-apps.yml` builds both deliverables:
+- Web: Expo web export, HTML/asset checks, ZIP packaging.
+- Android: Expo native prebuild, Gradle release APK, and embedded JavaScript bundle verification.
+
+It runs on pushes and pull requests to `main` / `master`, and can be started manually from the Actions tab using **Run workflow**.
 
 ## Run locally
-Requirements: Node.js 20+
+
+Requires Node.js 20+.
 
 ```bash
-npm install
+npm install --legacy-peer-deps
 npm run web
 ```
 
-For Android, install Android Studio/SDK and run `npm run android` on a connected device or emulator.
+## MVP limitations before public launch
 
-## GitHub Actions
-The workflow in `.github/workflows/build-apps.yml` exports the web build and creates an Android debug APK. Open the repository's Actions tab after pushing to inspect build results and download the APK artifact.
+The directory currently uses illustrative sample providers, prices, ratings, and areas. Provider listings and demo reviews exist only in memory and reset when the app restarts. Before presenting the service as a live public directory, add persistent storage, verified business profiles, authentication and authorization where needed, privacy and terms pages, reporting/moderation, and a real data backup strategy. Live GPS and embedded maps are not connected; directions open a Google Maps search.
 
-## Prototype limitations
-Seeded provider information, prices, ratings and distances are demo data, not verified businesses. Listings and reviews are in-memory only and reset on restart. No persistent database, authenticat...
+## Open source and release
+
+The repository is public, but a public repository alone does not specify a license. Before describing the project as open source, choose and add a license (for example, MIT if that matches your intended permissions). Before distributing a production APK, test the latest build on real Android devices, check the package name/version, and publish release notes with the exact tested APK.
