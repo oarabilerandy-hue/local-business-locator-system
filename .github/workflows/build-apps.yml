@@ -10,7 +10,7 @@ permissions:
   actions: read
 jobs:
   web:
-    name: Export web app and package ZIP
+    name: Export and verify web app
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -23,15 +23,51 @@ jobs:
         run: npx expo install --fix
       - name: Export web app
         run: npx expo export --platform web
-      - name: Verify web entry point
+      - name: Make exported HTML work from an extracted folder
         run: |
-          test -s dist/index.html
-          grep -qi '<html' dist/index.html
-          echo "Web entry point exists and is not blank."
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          html_path = Path("dist/index.html")
+          if not html_path.is_file() or html_path.stat().st_size == 0:
+              raise SystemExit("ERROR: dist/index.html is missing or empty")
+
+          html = html_path.read_text(encoding="utf-8")
+          if "<html" not in html.lower() or "<body" not in html.lower():
+              raise SystemExit("ERROR: exported HTML document is incomplete")
+
+          # Relative asset URLs allow index.html to be opened from the extracted ZIP
+          # and also work when hosted from a subdirectory.
+          html = re.sub(r'((?:src|href)=["\'])/', r'\1./', html)
+          html_path.write_text(html, encoding="utf-8")
+
+          script_paths = re.findall(r'<script[^>]+src=["\']([^"\']+)["\']', html, flags=re.I)
+          local_scripts = [p for p in script_paths if not re.match(r'^[a-z]+://', p, flags=re.I)]
+          if not local_scripts:
+              raise SystemExit("ERROR: no local JavaScript bundles are referenced by index.html")
+
+          for url in local_scripts:
+              relative = url.split("?", 1)[0].split("#", 1)[0]
+              relative = relative[2:] if relative.startswith("./") else relative.lstrip("/")
+              asset = Path("dist") / relative
+              if not asset.is_file() or asset.stat().st_size == 0:
+                  raise SystemExit(f"ERROR: referenced JavaScript asset is missing or empty: {asset}")
+
+          js_files = [p for p in Path("dist").rglob("*.js") if p.is_file() and p.stat().st_size > 0]
+          if not js_files:
+              raise SystemExit("ERROR: no non-empty JavaScript files were exported")
+          print(f"Verified HTML and {len(local_scripts)} local script reference(s); {len(js_files)} JavaScript file(s) present.")
+          PY
       - name: Create web ZIP with index.html at the root
         run: |
           cd dist
           zip -r ../local-business-locator-system-web.zip .
+      - name: Verify web ZIP contents
+        run: |
+          unzip -l local-business-locator-system-web.zip | grep -E '[[:space:]]index\.html$'
+          unzip -p local-business-locator-system-web.zip index.html | grep -qi '<html'
+          echo "Web ZIP contains a non-empty HTML entry point and exported assets."
       - uses: actions/upload-artifact@v4
         with:
           name: local-business-locator-system-web-zip
